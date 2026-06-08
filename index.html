@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anamnez — Flashcard &amp; Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0f0a;--bg2:#141810;--bg3:#1c211a;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
+  --text:#e8ead4;--text2:#8a9080;--text3:#5a6050;
+  --accent:#a8c44a;--accent2:#7a9632;--accent-bg:rgba(168,196,74,0.08);
+  --red:#e05a4a;--teal:#4ab8a0;--teal-bg:rgba(74,184,160,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;overflow-x:hidden}
+.app{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 24px 80px}
+header{display:flex;align-items:center;justify-content:space-between;padding:32px 0 40px;border-bottom:1px solid var(--border);margin-bottom:40px}
+.logo{font-family:'DM Serif Display',serif;font-size:26px;color:var(--text);letter-spacing:-.5px}
+.logo span{color:var(--accent);font-style:italic}
+.nav{display:flex;gap:4px}
+.nav-btn{font-size:13px;font-weight:500;padding:8px 18px;border-radius:40px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;transition:all .2s;font-family:'Outfit',sans-serif}
+.nav-btn:hover{border-color:var(--border2);color:var(--text)}
+.nav-btn.active{background:var(--accent);border-color:var(--accent);color:#0c0f0a;font-weight:600}
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:32px}
+.f-btn{font-size:12px;font-weight:500;padding:5px 13px;border-radius:40px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;transition:all .2s;font-family:'Outfit',sans-serif}
+.f-btn:hover{color:var(--text2);border-color:var(--border2)}
+.f-btn.on{color:var(--text);border-color:var(--border2);background:var(--bg3)}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.card-thumb{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px 16px 16px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;min-height:100px;display:flex;flex-direction:column;justify-content:flex-end}
+.card-thumb:hover{border-color:var(--border2);transform:translateY(-2px)}
+.card-cat-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;opacity:.7}
+.card-name{font-size:14px;font-weight:500;line-height:1.4;color:var(--text)}
+#detail-view{display:none}
+.detail-back{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);cursor:pointer;margin-bottom:32px;transition:color .2s;background:none;border:none;font-family:'Outfit',sans-serif}
+.detail-back:hover{color:var(--text)}
+.detail-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:40px;max-width:720px}
+.detail-title{font-family:'DM Serif Display',serif;font-size:32px;color:var(--text);line-height:1.2;margin-bottom:6px}
+.detail-cat-pill{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 12px;border-radius:40px;margin-bottom:12px}
+.detail-section{margin-bottom:24px}
+.detail-section-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.detail-section-label::after{content:"";flex:1;height:1px;background:var(--border)}
+.tags{display:flex;flex-wrap:wrap;gap:7px}
+.tag{font-size:13px;padding:5px 12px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);line-height:1.4}
+.tag.key{background:rgba(168,196,74,0.08);border-color:rgba(168,196,74,0.25);color:var(--accent)}
+.tag.dx{background:var(--teal-bg);border-color:rgba(74,184,160,0.2);color:var(--teal)}
+.tag.note{background:rgba(212,160,58,0.08);border-color:rgba(212,160,58,0.2);color:#d4a03a}
+.flip-container{perspective:1000px;cursor:pointer;max-width:480px;margin:0 auto 24px}
+.flipper{position:relative;width:100%;height:300px;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.4,0,.2,1)}
+.flipper.flipped{transform:rotateY(180deg)}
+.flip-front,.flip-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:20px;display:flex;align-items:center;justify-content:center;padding:32px;border:1px solid var(--border);text-align:center}
+.flip-front{background:var(--bg2);flex-direction:column;gap:12px}
+.flip-back{background:var(--bg3);transform:rotateY(180deg);flex-direction:column;gap:8px;overflow-y:auto}
+.flip-hint{font-size:11px;color:var(--text3);position:absolute;bottom:14px;right:18px;letter-spacing:.05em}
+.flip-disease{font-family:'DM Serif Display',serif;font-size:26px;color:var(--text)}
+.flip-cat{font-size:11px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase}
+.flip-clue{font-size:13px;color:var(--text2);line-height:1.5;text-align:left;width:100%}
+.flash-nav{display:flex;justify-content:center;align-items:center;gap:16px;margin-bottom:32px}
+.flash-nav-btn{font-size:13px;font-weight:500;padding:8px 20px;border-radius:40px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;transition:all .2s;font-family:'Outfit',sans-serif}
+.flash-nav-btn:hover{border-color:var(--border2);color:var(--text)}
+.flash-counter{font-family:'DM Mono',monospace;font-size:13px;color:var(--text3);min-width:60px;text-align:center}
+#quiz-view{display:none}
+.quiz-wrap{max-width:580px;margin:0 auto}
+.qsetup-title{font-size:13px;color:var(--text2);margin-bottom:12px;font-weight:500;letter-spacing:.05em;text-transform:uppercase}
+.qrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.qtoggle{font-size:12px;font-weight:500;padding:5px 13px;border-radius:40px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;transition:all .2s;font-family:'Outfit',sans-serif}
+.qtoggle.on{border-color:var(--border2);background:var(--bg3);color:var(--text)}
+.qstart{font-size:13px;font-weight:600;padding:10px 24px;border-radius:40px;border:none;background:var(--accent);color:#0c0f0a;cursor:pointer;margin-top:8px;font-family:'Outfit',sans-serif}
+.qstart:hover{opacity:.88}
+.quiz-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.qpbar{height:3px;background:var(--border);border-radius:10px;margin-bottom:32px;overflow:hidden}
+.qpfill{height:100%;background:var(--accent);border-radius:10px;transition:width .4s ease}
+.qnum{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3)}
+.qscore{font-size:12px;font-weight:600;padding:4px 12px;border-radius:40px;background:var(--accent-bg);color:var(--accent);border:1px solid rgba(168,196,74,0.2)}
+.quiz-q{font-family:'DM Serif Display',serif;font-size:22px;color:var(--text);line-height:1.4;margin-bottom:8px}
+.quiz-sub{font-size:14px;color:var(--text2);margin-bottom:28px;line-height:1.5}
+.options{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.opt{font-size:14px;padding:14px 18px;border-radius:12px;border:1px solid var(--border);background:var(--bg2);color:var(--text);cursor:pointer;text-align:left;transition:all .15s;line-height:1.4;font-family:'Outfit',sans-serif}
+.opt:hover:not(:disabled){border-color:var(--border2);background:var(--bg3)}
+.opt.correct{background:rgba(74,184,160,0.1);border-color:rgba(74,184,160,0.4);color:var(--teal)}
+.opt.wrong{background:rgba(224,90,74,0.1);border-color:rgba(224,90,74,0.35);color:var(--red)}
+.opt:disabled{cursor:default}
+.qexpl{font-size:13px;padding:12px 16px;border-radius:10px;background:var(--bg3);color:var(--text2);line-height:1.6;border-left:3px solid var(--accent2);margin-bottom:16px;display:none}
+.qexpl.show{display:block}
+.next-btn{font-size:14px;font-weight:600;padding:12px 28px;border-radius:40px;border:none;background:var(--accent);color:#0c0f0a;cursor:pointer;display:none;font-family:'Outfit',sans-serif}
+.next-btn.show{display:inline-block}
+.next-btn:hover{opacity:.88}
+.result-screen{text-align:center;padding:60px 20px}
+.rbig{font-family:'DM Serif Display',serif;font-size:72px;color:var(--accent);line-height:1;margin-bottom:8px}
+.rlbl{font-size:14px;color:var(--text2);margin-bottom:32px}
+.rmsg{font-size:18px;color:var(--text);margin-bottom:40px;font-style:italic;font-family:'DM Serif Display',serif}
+.rbtn{font-size:14px;font-weight:600;padding:12px 32px;border-radius:40px;border:1px solid var(--border2);background:transparent;color:var(--text);cursor:pointer;margin:0 6px;font-family:'Outfit',sans-serif}
+.rbtn:hover{background:var(--bg3)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.card-thumb{animation:fadeUp .3s ease both}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
+
+.shuffle-switch{width:38px;height:22px;background:var(--bg3);border:1px solid var(--border2);border-radius:11px;position:relative;transition:background .2s;flex-shrink:0}
+.shuffle-switch.on{background:var(--accent)}
+.shuffle-knob{width:16px;height:16px;background:var(--text3);border-radius:50%;position:absolute;top:2px;left:2px;transition:transform .2s,background .2s}
+.shuffle-switch.on .shuffle-knob{transform:translateX(16px);background:#0c0f0a}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="logo">Anam<span>nez</span></div>
+  <nav class="nav">
+    <button class="nav-btn active" id="tab-cards" onclick="showTab('cards')">Kartlar</button>
+    <button class="nav-btn" id="tab-flash" onclick="showTab('flash')">Flashcard</button>
+    <button class="nav-btn" id="tab-quiz" onclick="showTab('quiz')">Quiz</button>
+  </nav>
+</header>
+<div id="cards-view">
+  <div class="filter-bar" id="filter-bar"></div>
+  <div class="cards-grid" id="cards-grid"></div>
+</div>
+<div id="detail-view">
+  <button class="detail-back" onclick="closeDetail()">&#8592; Geri d&#246;n</button>
+  <div class="detail-card" id="detail-card"></div>
+</div>
+<div id="flash-view" style="display:none">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+    <div class="filter-bar" id="flash-filter-bar" style="margin-bottom:0;flex:1"></div>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;flex-shrink:0">
+      <div class="shuffle-switch" id="shuffle-switch" onclick="toggleShuffle()" title="Karistir">
+        <div class="shuffle-knob" id="shuffle-knob"></div>
+      </div>
+      <span style="font-size:12px;color:var(--text3);font-family:Outfit,sans-serif;letter-spacing:.04em">Kar&#305;&#351;t&#305;r</span>
+    </label>
+  </div>
+  <div class="flip-container" onclick="flipCard()">
+    <div class="flipper" id="flipper">
+      <div class="flip-front">
+        <div class="flip-disease" id="flip-disease-name"></div>
+        <div class="flip-hint">&#8617; &#199;evir</div>
+      </div>
+      <div class="flip-back">
+        <div id="flip-back-content" style="width:100%"></div>
+        <div class="flip-hint">Geri &#8617;</div>
+      </div>
+    </div>
+  </div>
+  <div class="flash-nav">
+    <button class="flash-nav-btn" onclick="flashPrev()">&#8592; &#214;nceki</button>
+    <span class="flash-counter" id="flash-counter"></span>
+    <button class="flash-nav-btn" onclick="flashNext()">Sonraki &#8594;</button>
+  </div>
+</div>
+<div id="quiz-view">
+  <div class="quiz-wrap" id="quiz-wrap"></div>
+</div>
+</div>
+<script>
+const CAT={
+  "Bas Agrisi":{color:"#5a90e0",bg:"rgba(90,144,224,0.12)",label:"Ba\u015f A\u011fr\u0131s\u0131"},
+  "Gogus Agrisi":{color:"#e0804a",bg:"rgba(224,128,74,0.12)",label:"G\u00f6\u011f\u00fcs A\u011fr\u0131s\u0131"},
+  "Nefes Darligi":{color:"#4ab8a0",bg:"rgba(74,184,160,0.12)",label:"Nefes Darl\u0131\u011f\u0131"},
+  "Atesle Gelenler":{color:"#d4a03a",bg:"rgba(212,160,58,0.12)",label:"Ate\u015fle Gelenler"},
+  "Karin Agrisi":{color:"#a8c44a",bg:"rgba(168,196,74,0.12)",label:"Kar\u0131n A\u011fr\u0131s\u0131"},
+  "Hematolojik":{color:"#9a7ae0",bg:"rgba(154,122,224,0.12)",label:"Hematolojik/Metabolik"},
+  "Endokrin":{color:"#e07ab0",bg:"rgba(224,122,176,0.12)",label:"Endokrin"}
+};
+</script>
+<script id="data-script">
+const DATA = [
+  {
+    "name": "Auralı Migren",
+    "cat": "Bas Agrisi",
+    "clues": [
+      "Görsel aura: zigzag çizgiler, ışık çakmaları (fosfenler)",
+      "Aura 20-30 dk sürer, ardından tek taraflı başağrısı başlar",
+      "Tek taraflı, zonklayıcı (pulsating) ağrı",
+      "Fotofobi + fonofobi ikisi birden",
+      "Fiziksel aktiviteyle şiddetlenir",
+      "Bulantı ve kusma eşlik edebilir",
+      "Atak 4-72 saat sürer"
+    ],
+    "key": [
+      "Görsel aura (zigzag/ışık çakması)",
+      "Tek taraflı zonklayıcı",
+      "Fotofobi + fonofobi birlikte"
+    ],
+    "dx": [
+      "Aura özellikleri ve süresi",
+      "Nörolojik defisit olmaması",
+      "Klinik tanı (tipik vakada görüntüleme gereksiz)"
+    ],
+    "notes": [
+      "Kırmızı bayrak: thunderclap ağrı, ateş, nörolojik defisit, papilödem → acil görüntüleme"
+    ]
+  },
+  {
+    "name": "Epizodik Gerilim Tipi Baş Ağrısı",
+    "cat": "Bas Agrisi",
+    "clues": [
+      "İki taraflı, baskı/sıkıştırma tarzında ağrı",
+      "Hafif-orta şiddet",
+      "Stresle ilişkili",
+      "Aura YOK",
+      "Fiziksel aktiviteyle şiddetlenmez",
+      "Günlük yaşamı çok etkilemez",
+      "Fotofobi VEYA fonofobi — ikisi birden olmaz (migrenden farkı)"
+    ],
+    "key": [
+      "İki taraflı baskı",
+      "Stresle ilişkili",
+      "Aura yok",
+      "Fotofobi/fonofobi ikisi birden yok"
+    ],
+    "dx": [
+      "Klinik tanı",
+      "Migrenden ayırım: tek taraflılık yok, zonklama yok"
+    ],
+    "notes": [
+      "Ayda ≥15 gün → kronik gerilim tipi; NSAİİ aşırı kullanımı → ilaç aşımı başağrısı riski"
+    ]
+  },
+  {
+    "name": "Stabil Angina",
+    "cat": "Gogus Agrisi",
+    "clues": [
+      "Eforla tetiklenir, istirahatte geçer",
+      "5-10 dakika sürer, 20 dk'yı aşmaz",
+      "Retrosternal ağrı — sol kola veya çeneye yayılım",
+      "Nitrat ile rahatlar",
+      "Ağırlık/baskı/sıkışma hissi (yanma DEĞİL)",
+      "Soğuk veya stres de tetikleyebilir"
+    ],
+    "key": [
+      "Eforla gelir, istirahatte geçer",
+      "<20 dk",
+      "Retrosternal",
+      "Nitrata yanıt"
+    ],
+    "dx": [
+      "EKG (efor sırasında ST değişikliği)",
+      "Efor testi",
+      "Ağrı süresi ve tetikleyici"
+    ],
+    "notes": [
+      "Üçlü: yer (retrosternal) + karakter (baskı) + tetikleyici (efor) = tipik angina"
+    ]
+  },
+  {
+    "name": "Pulmoner Emboli",
+    "cat": "Gogus Agrisi",
+    "clues": [
+      "Ani başlayan nefes darlığı",
+      "Plöretik göğüs ağrısı (nefesle artar)",
+      "Hemoptizi",
+      "Bacaklarda şişlik ve ısı artışı (DVT bulgusu)",
+      "Risk: uzun yolculuk, immobilizasyon, atel, operasyon, DVT öyküsü, oral kontraseptif",
+      "Taşikardi, hipoksi"
+    ],
+    "key": [
+      "Ani nefes darlığı",
+      "Plöretik ağrı",
+      "Hemoptizi",
+      "DVT risk faktörü"
+    ],
+    "dx": [
+      "D-dimer (tarama — negatifse dışlar)",
+      "BT pulmoner anjiyografi (altın standart)",
+      "Wells skoru ile pre-test olasılık"
+    ],
+    "notes": [
+      "D-dimer: yüksek sensitivite, düşük spesifisite; Wells yüksekse direkt BT anjio"
+    ]
+  },
+  {
+    "name": "Akut Bronşit",
+    "cat": "Gogus Agrisi",
+    "clues": [
+      "Öksürük (balgamlı veya kuru)",
+      "Balgam: şeffaf/beyaz (viral) ya da sarı-yeşil (sekonder)",
+      "Hafif ateş",
+      "Bazen yan ağrısı",
+      "Pnömoniye göre daha hafif seyreder — titreme yok",
+      "Ral-ronküs duyulabilir"
+    ],
+    "key": [
+      "Hafif ateş",
+      "Şeffaf/beyaz balgam",
+      "Viral",
+      "Titreme YOK"
+    ],
+    "dx": [
+      "Klinik tanı",
+      "AC grafisi normal/hafif bulgu",
+      "CRP hafif yüksek, lökosit normal"
+    ],
+    "notes": [
+      "Akut bronşitte balgam sarı-yeşil olabilir ama bu her zaman bakteriyel anlamına gelmez"
+    ]
+  },
+  {
+    "name": "Pnömoni",
+    "cat": "Gogus Agrisi",
+    "clues": [
+      "Yüksek ateş + titreme (ürperme)",
+      "Balgamlı öksürük — sarı/yeşil/paslı renk",
+      "Plöretik yan ağrısı (batıcı, nefesle artar)",
+      "Halsizlik",
+      "Muayenede krepitan raller",
+      "Bronşitten farkı: titreme, yüksek ateş, balgam rengi, krepitan raller"
+    ],
+    "key": [
+      "Yüksek ateş + titreme",
+      "Paslı/sarı-yeşil balgam",
+      "Krepitan raller",
+      "Plöretik ağrı"
+    ],
+    "dx": [
+      "AC grafisi (infiltrasyon/konsolidasyon)",
+      "Lökositoz + CRP yüksek",
+      "Kan veya balgam kültürü"
+    ],
+    "notes": [
+      "Pnömonide göğüs ağrısı bronşite göre daha şiddetli ve batıcıdır"
+    ]
+  },
+  {
+    "name": "Kalp Yetmezliği",
+    "cat": "Nefes Darligi",
+    "clues": [
+      "Ortopne: yatınca nefes darlığı artar, oturunca/ayağa kalkınca azalır",
+      "Gece nefes darlığı / PND (Paroksismal Nokturnal Dispne)",
+      "Bacak/ayak bileği ödemi",
+      "Çabuk yorulma",
+      "Juguler venöz dolgunluk",
+      "AC'de raller",
+      "Kardiyomegali"
+    ],
+    "key": [
+      "Ortopne",
+      "PND",
+      "Bacak ödemi",
+      "Juguler dolgunluk"
+    ],
+    "dx": [
+      "AC grafisi (ödem, kardiyomegali, Kerley B çizgileri)",
+      "EKO",
+      "BNP/NT-proBNP yüksekliği"
+    ],
+    "notes": [
+      "Akut dekompansasyonda: pembe köpüklü balgam, 3. kalp sesi (S3 gallop)"
+    ]
+  },
+  {
+    "name": "AC Kanseri",
+    "cat": "Nefes Darligi",
+    "clues": [
+      "İnatçı, geçmeyen öksürük",
+      "Kilo kaybı (istemsiz)",
+      "Kanlı balgam (hemoptizi)",
+      "Sigara öyküsü (en güçlü risk faktörü)",
+      "Ses kısıklığı (n. laryngeus rekurrens basısı)",
+      "Omuz/kol ağrısı (Pancoast sendromu)",
+      "Kemik ağrısı (metastaz)",
+      "Hiperglisemi (paraneoplastik)"
+    ],
+    "key": [
+      "Sigara öyküsü",
+      "Hemoptizi",
+      "İnatçı öksürük",
+      "Kilo kaybı"
+    ],
+    "dx": [
+      "AC grafisi / BT",
+      "Bronkoskopi + biyopsi",
+      "PET-BT evreleme"
+    ],
+    "notes": [
+      "Adenokarsinom sigara ile zayıf ilişkili — sigara içmeyende de olabilir"
+    ]
+  },
+  {
+    "name": "Tüberküloz",
+    "cat": "Nefes Darligi",
+    "clues": [
+      ">2 haftalık kronik öksürük",
+      "Gece terlemesi",
+      "Kilo kaybı",
+      "İştah azalması",
+      "Hemoptizi olabilir",
+      "Subfebril ateş (37.5-38°C)",
+      "Risk: temas öyküsü, bağışıklık baskılanması, kalabalık ortam"
+    ],
+    "key": [
+      ">2 hafta kronik öksürük",
+      "Gece terlemesi",
+      "Kilo kaybı",
+      "Subfebril ateş"
+    ],
+    "dx": [
+      "PPD (Tüberkülin deri testi)",
+      "Balgam ARB (aside rezistan basil)",
+      "AC grafisi: üst lob infiltrasyonu, kaviter lezyon"
+    ],
+    "notes": [
+      "Aktif TB'de ARB pozitifse bulaşıcı; izolasyon şart; IGRA testi alternatif"
+    ]
+  },
+  {
+    "name": "ÜSYE",
+    "cat": "Nefes Darligi",
+    "clues": [
+      "Burun akıntısı (rinore)",
+      "Boğaz ağrısı",
+      "Hafif öksürük",
+      "Sistemik bulgular minimal",
+      "Viral etken (rhinovirus vb.)",
+      "Düşük ateş veya ateşsiz",
+      "Kendiliğinden iyileşir (7-10 gün)"
+    ],
+    "key": [
+      "Burun akıntısı",
+      "Sistemik bulgu yok/az",
+      "Viral",
+      "Kendiliğinden iyileşir"
+    ],
+    "dx": [
+      "Klinik tanı",
+      "Bakteriyel farenjitten ayırım: ateş + eksüda + LAP → streptokok?"
+    ],
+    "notes": [
+      "Antibiyotik endikasyonu yoktur; semptomatik tedavi"
+    ]
+  },
+  {
+    "name": "Astım",
+    "cat": "Nefes Darligi",
+    "clues": [
+      "Tekrarlayan hışıltılı solunum (wheezing)",
+      "Reversible hava yolu obstrüksiyonu",
+      "Genç/çocukluk başlangıçlı",
+      "Tetikleyici: soğuk hava, efor, alerjen, koku, NSAİİ",
+      "Noktürnal semptomlar (gece/sabah erken)",
+      "Aile öyküsü (atopi)",
+      "Eozinofili, total IgE yüksekliği"
+    ],
+    "key": [
+      "Reversible obstrüksiyon",
+      "Wheezing",
+      "Tetikleyici",
+      "Noktürnal",
+      "Genç+atopi"
+    ],
+    "dx": [
+      "Spirometri + bronkodilatatör testi (FEV1 ≥%12 artış)",
+      "Metakolin provokasyon testi (tanı şüpheliyse)"
+    ],
+    "notes": [
+      "KOAH'tan farkı: genç, reversible, alerji öyküsü, sigara yok veya az"
+    ]
+  },
+  {
+    "name": "KOAH",
+    "cat": "Nefes Darligi",
+    "clues": [
+      "Dispne (egzersizle başlar, zamanla istirahatte)",
+      "Yaşlı hasta (genellikle >40 yaş)",
+      "Ağır sigara öyküsü — EN ÖNEMLI risk",
+      "Tandır/soba/biyokütle dumanı maruziyeti",
+      "Kronik öksürük: en az 2 yıl, yılda 3 ay (kronik bronşit tanımı)",
+      "İrreversible hava yolu obstrüksiyonu",
+      "Fıçı göğüs, yardımcı solunum kasları kullanımı"
+    ],
+    "key": [
+      "Sigara/soba maruziyeti",
+      "Kronik öksürük ≥3ay/yıl x2yıl",
+      "Yaşlı",
+      "İrreversible obstrüksiyon"
+    ],
+    "dx": [
+      "Spirometri: post-bronkodilatatör FEV1/FVC <0.70",
+      "AC grafisi: hiperinflasyon, diyafram düzleşmesi"
+    ],
+    "notes": [
+      "En az 2 yıl, 3 ay belgeli öksürük = kronik bronşit; amfizem = parankimal yıkım; ikisi KOAH'ı oluşturur"
+    ]
+  },
+  {
+    "name": "Bruselloz",
+    "cat": "Atesle Gelenler",
+    "clues": [
+      "Dalgalı ateş (ondülan ateş) — EN TİPİK özellik",
+      "Gece terlemesi",
+      "Hayvancılıkla uğraşma (çoban, kasap, veteriner)",
+      "Pastörize edilmemiş süt/peynir tüketimi",
+      "Bel ağrısı (brusella spondiliti)",
+      "Artralji/artrit",
+      "Hepatosplenomegali olabilir"
+    ],
+    "key": [
+      "Dalgalı (ondülan) ateş",
+      "Hayvancılık/hayvan teması",
+      "Pastörize edilmemiş ürün"
+    ],
+    "dx": [
+      "Wright testi (aglütinasyon ≥1/160)",
+      "Kültür (altın standart)",
+      "Brucella serolojisi"
+    ],
+    "notes": [
+      "Antibiyotiğe rağmen dalgalı seyreder; ülkemizde sık; Türkiye endemik bölge"
+    ]
+  },
+  {
+    "name": "Salmonelloz",
+    "cat": "Atesle Gelenler",
+    "clues": [
+      "Yüksek ateş",
+      "İshal (sulu, bazen kanlı)",
+      "Ani başlangıç",
+      "Kontamine gıda: çiğ yumurta, tavuk, işlenmemiş et",
+      "Hayvan teması",
+      "Bulantı, kusma",
+      "Karın ağrısı"
+    ],
+    "key": [
+      "Kontamine gıda (çiğ yumurta/tavuk)",
+      "Ani başlangıç",
+      "İshal + ateş"
+    ],
+    "dx": [
+      "Dışkı kültürü",
+      "Gıda öyküsü (anamnez kritik)"
+    ],
+    "notes": [
+      "Gıda zehirlenmesinden farkı: Salmonella ishalin 6-72 saat sonra başlaması; daha uzun süre"
+    ]
+  },
+  {
+    "name": "Tifoid Ateş (S. Typhi)",
+    "cat": "Atesle Gelenler",
+    "clues": [
+      "Sinsi başlangıç, ilerleyici ateş",
+      "İlk hafta konstipasyon, sonra ishal",
+      "Gül lekesi (rose spot): gövdede soluk pembe maküller",
+      "Uzamış ateş (>7 gün, bazen 2-3 hafta)",
+      "Rölatif bradikardi: ateşe oranla nabız düşük — FAGET BULGUSU",
+      "Baş ağrısı, halsizlik",
+      "Bağırsak kanaması/perforasyon riski (komplikasyon)"
+    ],
+    "key": [
+      "Rölatif bradikardi (Faget bulgusu)",
+      "Gül lekesi (rose spot)",
+      "Sinsi başlangıç",
+      "Konstipasyon → ishal"
+    ],
+    "dx": [
+      "Seyahat öyküsü (şüpheli su/gıda)",
+      "Widal testi",
+      "Kan kültürü (1. hafta en verimli)",
+      "Dışkı kültürü (2-3. hafta)"
+    ],
+    "notes": [
+      "Ateşe rağmen bradikardi = Faget bulgusu; papatya demeti döküntü klasik; bağırsak perforasyonu en korkulan komplikasyon"
+    ]
+  },
+  {
+    "name": "Sıtma (Malaria)",
+    "cat": "Atesle Gelenler",
+    "clues": [
+      "Periyodik ateş: 48 saatte bir (P. vivax/ovale) veya 72 saatte bir (P. malariae)",
+      "Titreme → yüksek ateş → terleme triadı",
+      "Tropikal seyahat öyküsü",
+      "Hemolitik anemi (solgunluk, sarılık)",
+      "Hepatosplenomegali",
+      "Baş ağrısı, miyalji"
+    ],
+    "key": [
+      "Periyodik ateş",
+      "Titreme-ateş-terleme triadı",
+      "Tropikal seyahat"
+    ],
+    "dx": [
+      "Periferik kan yayması Giemsa — altın standart",
+      "Hızlı antijen testi (RDT)",
+      "PCR (düşük parazitemi)"
+    ],
+    "notes": [
+      "P. falciparum: en tehlikeli, serebral malaria, 24 saatlik periyot; acil tedavi"
+    ]
+  },
+  {
+    "name": "Kolesistit",
+    "cat": "Karin Agrisi",
+    "clues": [
+      "Sağ üst kadran ağrısı",
+      "Yağlı yemek sonrası şiddetlenir",
+      "Murphy bulgusu POZİTİF: sağ üst kadranda palpasyonla inspiratuvar arrest",
+      "Ateş eşlik eder (taşın enfeksiyona yol açması)",
+      "Bulantı-kusma",
+      "Safra taşından farkı: ATEŞ VAR + Murphy pozitif"
+    ],
+    "key": [
+      "Murphy pozitif",
+      "Yağlı yemek sonrası",
+      "Sağ üst kadran",
+      "Ateş + Murphy kombinasyonu"
+    ],
+    "dx": [
+      "USG (duvar kalınlaşması, taş, perikolesistik sıvı)",
+      "Lökositoz + ateş",
+      "Murphy bulgusu klinik"
+    ],
+    "notes": [
+      "Kolesistit = safra taşı + enfeksiyon; saf safra koliği = taş, ateşsiz, Murphy negatif"
+    ]
+  },
+  {
+    "name": "Safra Taşı Koliği",
+    "cat": "Karin Agrisi",
+    "clues": [
+      "Postprandiyal (yemek sonrası) kolik tarzı ağrı",
+      "Sağ üst kadran veya epigastrik lokalizasyon",
+      "Kusma olabilir",
+      "ATEŞ YOK — ateş başlarsa kolesistit gelişti demektir",
+      "Ağrı dalgalı seyreder (kolik), sırta/sağ omuza yayılabilir",
+      "Murphy NEGATIF"
+    ],
+    "key": [
+      "Kolik ağrı",
+      "Ateşsiz",
+      "Postprandiyal",
+      "Murphy negatif"
+    ],
+    "dx": [
+      "USG (taş görüntüleme — altın standart)",
+      "Biliyer kolik klinik tablosu"
+    ],
+    "notes": [
+      "Ateş başlarsa kolesistit gelişmiş; Murphy pozitifleşirse enfeksiyon var"
+    ]
+  },
+  {
+    "name": "Kolestaz",
+    "cat": "Karin Agrisi",
+    "clues": [
+      "Sarılık (ikter)",
+      "Kaşıntı (pruritis) — özellikle geceleri",
+      "Koyu idrar (bilirübin)",
+      "Açık renkli/kil rengi dışkı (sterkobilin yok)",
+      "Gözlerde sarılık (skleral ikter önce görülür)",
+      "Yağda eriyen vitamin eksikliği (A, D, E, K)"
+    ],
+    "key": [
+      "Sarılık",
+      "Koyu idrar",
+      "Kil rengi dışkı",
+      "Kaşıntı"
+    ],
+    "dx": [
+      "ALP ve GGT yüksekliği",
+      "Bilirubin artışı (direkt)",
+      "USG/ERCP/MRCP"
+    ],
+    "notes": [
+      "İntrahepatik vs ekstrahepatik ayırımı önemli; USG ile başlanır"
+    ]
+  },
+  {
+    "name": "Peptik Ülser",
+    "cat": "Karin Agrisi",
+    "clues": [
+      "Epigastrik ağrı",
+      "Duodenal ülser: açlıkta artar, yemekten sonra azalır — DUODENAL ÜLSERİN TANISI TOPU",
+      "Gastrik ülser: yemekten 30-60 dk sonra artar",
+      "H. pylori öyküsü (en sık neden)",
+      "NSAİİ / ASA kullanımı (ikinci sık neden)",
+      "Alkol kullanımı",
+      "Hematemez / melena (kanama komplikasyonu)"
+    ],
+    "key": [
+      "Açlık ağrısı → yemekle rahatlar (duodenal)",
+      "H. pylori",
+      "NSAİİ kullanımı",
+      "Epigastrik"
+    ],
+    "dx": [
+      "Endoskopi (altın standart)",
+      "H. pylori testi (üre nefes testi veya dışkı Ag)",
+      "NSAİİ öyküsü sorgulanmalı"
+    ],
+    "notes": [
+      "NSAID kullanımı → ülser → NSAID kesilmeli + PPI başlanmalı; alkol da risk; NSAID + kortikosteroid = en riskli kombinasyon"
+    ]
+  },
+  {
+    "name": "Dispepsi",
+    "cat": "Karin Agrisi",
+    "clues": [
+      "Şişkinlik",
+      "Hazımsızlık",
+      "Mide yanması",
+      "Epigastrik rahatsızlık",
+      "Genellikle fonksiyonel (organik patoloji yok)",
+      "Ağrı yemekle değişken, tutarsız"
+    ],
+    "key": [
+      "Fonksiyonel",
+      "Şişkinlik + hazımsızlık",
+      "Organik neden yok"
+    ],
+    "dx": [
+      "Organik nedenler dışlandıktan sonra konur",
+      "Endoskopi: alarm bulgusu varsa zorunlu"
+    ],
+    "notes": [
+      "Alarm bulguları: kilo kaybı, disfaji, kanlı dışkı, 55 yaş üstü yeni başlangıç → endoskopi şart"
+    ]
+  },
+  {
+    "name": "Kolon Kanseri",
+    "cat": "Karin Agrisi",
+    "clues": [
+      "Dışkıda kan (hematokezya) veya melena",
+      "Anemi (kronik kan kaybı — sağ kolon)",
+      "Kilo kaybı (istemsiz)",
+      "Değişen bağırsak alışkanlığı (konstipasyon-ishal dönüşümü — sol kolon)",
+      "≥50 yaş veya ailede kolon kanseri öyküsü",
+      "Karın ağrısı geç bulgudur"
+    ],
+    "key": [
+      "Dışkıda kan",
+      "Değişen bağırsak alışkanlığı",
+      "Kilo kaybı",
+      "≥50 yaş"
+    ],
+    "dx": [
+      "Kolonoskopi (biyopsi ile altın standart)",
+      "Gaitada gizli kan testi (tarama)",
+      "CEA (takip için)"
+    ],
+    "notes": [
+      "Sağ kolon: anemi öne çıkar; Sol kolon: bağırsak değişikliği öne çıkar; rektum: kanlı dışkı en belirgin"
+    ]
+  },
+  {
+    "name": "Akut Apandisit",
+    "cat": "Karin Agrisi",
+    "clues": [
+      "Göbek çevresinde başlayan ağrı → sağ alt kadrana göç (McBurney noktası)",
+      "Bulantı, kusma",
+      "Ateş (düşük-orta derece)",
+      "İştahsızlık",
+      "Rebound hassasiyet (periton irritasyonu)",
+      "Psoas işareti pozitif olabilir",
+      "Genç yaşta daha sık"
+    ],
+    "key": [
+      "Göbekten → sağ alt kadrana göç",
+      "McBurney noktası hassasiyeti",
+      "Rebound",
+      "İştahsızlık"
+    ],
+    "dx": [
+      "Klinik tanı + Alvarado skoru",
+      "USG / BT (tanı şüpheliyse)",
+      "Lökositoz"
+    ],
+    "notes": [
+      "Ağrının göbek çevresinden başlayıp SAĞ ALT KADRANA kayması klasik; perforasyon riski"
+    ]
+  },
+  {
+    "name": "Akut Pankreatit",
+    "cat": "Karin Agrisi",
+    "clues": [
+      "Ani başlayan şiddetli karın ağrısı",
+      "Sırta vuran ağrı (kuşak/bant tarzı)",
+      "ÖNE EĞİLİNCE AZALIR (karakteristik postür)",
+      "Bulantı, kusma",
+      "En sık neden: safra taşı ve alkol",
+      "Ateş olabilir",
+      "İleus bulguları (bağırsak seslerinin azalması)"
+    ],
+    "key": [
+      "Sırta vuran/kuşak ağrı",
+      "Öne eğilince azalır",
+      "Safra taşı VEYA alkol öyküsü"
+    ],
+    "dx": [
+      "Amilaz ve lipaz yüksekliği (>3x üst sınır)",
+      "Karın BT (Balthazar skoru)",
+      "USG (safra taşı araştırması)"
+    ],
+    "notes": [
+      "Lipaz amilazdan daha spesifik ve uzun süre yüksek kalır; Ranson kriterleri prognoz"
+    ]
+  },
+  {
+    "name": "Karın Aort Anevrizması",
+    "cat": "Karin Agrisi",
+    "clues": [
+      "Karın ağrısı + sırt/bel ağrısı birlikteliği",
+      "Nabızlı kitle hissi (karın muayenesinde)",
+      "Genellikle yaşlı, aterosklerotik hasta",
+      "HT, sigara, ateroskleroz risk faktörü",
+      "Rüptür triadı: ağrı + hipotansiyon + pulsatil kitle"
+    ],
+    "key": [
+      "Nabızlı karın kitlesi",
+      "Sırt/bel + karın ağrısı birlikteliği",
+      "Yaşlı + ateroskleroz"
+    ],
+    "dx": [
+      "USG (tarama)",
+      "Karın BT anjiyografi (tanı ve planlama)"
+    ],
+    "notes": [
+      "Rüptür hayati tehlike; acil cerrahi; >5.5 cm → elektif cerrahi endikasyonu"
+    ]
+  },
+  {
+    "name": "Talasemi",
+    "cat": "Hematolojik",
+    "clues": [
+      "Aile öyküsü (otozomal resesif)",
+      "Çocuklukta başlayan hemolitik anemi",
+      "Yüz kemik deformiteleri (frontal çıkıntı, çekik göz)",
+      "Hepatosplenomegali",
+      "Sarılık (hemoliz)",
+      "Büyüme geriliği",
+      "Daha önce demir tedavisi almış ama işe yaramamış"
+    ],
+    "key": [
+      "Aile öyküsü",
+      "Çocukluk başlangıçlı hemolitik anemi",
+      "Kemik deformitesi",
+      "Demire yanıtsız anemi"
+    ],
+    "dx": [
+      "Hb elektroforezi (HbA2 artışı β-talasemide)",
+      "Periferik yayma (target cell, hipokromi)"
+    ],
+    "notes": [
+      "Demir eksikliğiyle karışır; ferritin normal/yüksek, Hb elektroforezi ayırım yapar; gereksiz demir verme toksik"
+    ]
+  },
+  {
+    "name": "Demir Eksikliği Anemisi",
+    "cat": "Hematolojik",
+    "clues": [
+      "Halsizlik, çabuk yorulma",
+      "Pika: toprak, buz, kil yeme isteği (karakteristik)",
+      "Tırnak değişikliği: kaşıklı tırnak (koilonychia)",
+      "Menoraji öyküsü (kadınlarda sık neden)",
+      "GIS kanama öyküsü (NSAİİ, ülser, kolon kanseri)",
+      "Dil ağrısı/atrofi (atrofik glossit)",
+      "Ağız köşe çatlakları (angular stomatit)"
+    ],
+    "key": [
+      "Pika (toprak/buz yeme)",
+      "Koilonychia (kaşıklı tırnak)",
+      "Menoraji/GIS kanama öyküsü",
+      "Atrofik glossit"
+    ],
+    "dx": [
+      "Serum ferritin düşük (en sensitif)",
+      "Hb ve MCV düşük",
+      "Periferik yayma: hipokrom mikrositer"
+    ],
+    "notes": [
+      "Kronik hastalık anemisinden ayırım: ferritin düşük = demir eksikliği; ferritin yüksek = kronik hastalık"
+    ]
+  },
+  {
+    "name": "Cushing Sendromu",
+    "cat": "Hematolojik",
+    "clues": [
+      "Moon yüz (yüzde yuvarlaklaşma, yanaklarda kızarıklık)",
+      "Santral obezite + ince ekstremiteler",
+      "Buffalo hump (boyun arkasında yağlanma)",
+      "Mor/pembe striler (geniş striae)",
+      "Hipertansiyon",
+      "Proksimal kas güçsüzlüğü (merdiven çıkamama)",
+      "Cilt inceliği, kolay morarma",
+      "Osteoporoz, hiperglisemi, amenore"
+    ],
+    "key": [
+      "Moon yüz",
+      "Mor striler",
+      "Proksimal kas güçsüzlüğü",
+      "Santral obezite + ince ekstremiteler"
+    ],
+    "dx": [
+      "24 saatlik idrarda kortizol",
+      "Düşük doz deksametazon supresyon testi",
+      "ACTH düzeyi (adrenal vs hipofiz)"
+    ],
+    "notes": [
+      "Ekzojen steroid kullanımı en sık neden (iatrojenik Cushing); endojen: hipofiz adenomu (Cushing hastalığı)"
+    ]
+  },
+  {
+    "name": "PCOS",
+    "cat": "Hematolojik",
+    "clues": [
+      "Düzensiz adet (oligomenore/amenore)",
+      "Hirsutizm (erkek tipi tüylenme)",
+      "Obezite",
+      "İnfertilite",
+      "Erkek tipi saç dökülmesi (androjenik alopesi)",
+      "Akne",
+      "İnsülin direnci",
+      "Cilt kararması (akantoz nigrikans)",
+      "Erkek tipi saç dökülmesi"
+    ],
+    "key": [
+      "Düzensiz adet",
+      "Hirsutizm",
+      "İnfertilite",
+      "İnsülin direnci",
+      "Akne"
+    ],
+    "dx": [
+      "LH/FSH oranı artışı (>2)",
+      "USG: polikistik over görünümü",
+      "Androjen düzeyleri (total testosteron)"
+    ],
+    "notes": [
+      "Rotterdam kriterleri: 3'ten 2'si gerekli: oligoovülasyon, androjen fazlalığı, USG bulgusu; en sık endokrin bozukluk"
+    ]
+  },
+  {
+    "name": "Graves Hastalığı",
+    "cat": "Endokrin",
+    "clues": [
+      "Çarpıntı, taşikardi",
+      "Sinirlilik, huzursuzluk, tremor",
+      "Terleme artışı",
+      "Kilo kaybı (iştah artmasına rağmen)",
+      "EGZOFTALMİ — Graves'e özgü, EN AYIRICI bulgu",
+      "Guatr (diffüz tiroid büyümesi)",
+      "GIS hareketleri artar → ishal",
+      "Sıcağa intolerans",
+      "Pretibyal miksödem (nadir ama özgül)"
+    ],
+    "key": [
+      "Egzoftalmi (Graves'e özgü)",
+      "Taşikardi + terleme",
+      "Kilo kaybı + iştah artışı",
+      "Sıcağa intolerans",
+      "Guatr"
+    ],
+    "dx": [
+      "TSH düşük",
+      "fT4/fT3 artışı",
+      "Anti-TSHR (TSI) pozitif — Graves için spesifik",
+      "Tiroid sintigrafisi: diffüz tutulum"
+    ],
+    "notes": [
+      "Tirotoksikozdan farkı: egzoftalmi ve anti-TSHR pozitifliği; proksimal kas güçsüzlüğü de olabilir"
+    ]
+  },
+  {
+    "name": "Tirotoksikoz",
+    "cat": "Endokrin",
+    "clues": [
+      "TSH düşük, fT4 artışı",
+      "Çarpıntı, taşikardi",
+      "Terleme artışı",
+      "Sinirlilik, tremor",
+      "Kilo kaybı",
+      "Sıcağa intolerans",
+      "Göz bulgusu YOK (Graves'ten farkı)"
+    ],
+    "key": [
+      "TSH düşük + fT4 yüksek",
+      "Göz bulgusu YOK",
+      "Çarpıntı + terleme + sinirlilik"
+    ],
+    "dx": [
+      "TSH ve fT4/fT3 ölçümü",
+      "Tiroid sintigrafisi (nodüler mi diffüz mi?)"
+    ],
+    "notes": [
+      "Graves hastalığı tirotoksikozun bir alt tipidir; Graves = tirotoksikoz + egzoftalmi + anti-TSHR"
+    ]
+  },
+  {
+    "name": "Hashimoto Tiroiditi",
+    "cat": "Endokrin",
+    "clues": [
+      "Yorgunluk (belirgin)",
+      "Kilo alma",
+      "Soğuğa tahammülsüzlük",
+      "Boyunda şişlik (tiroid büyümesi)",
+      "Kabızlık (GIS yavaşlar)",
+      "Bradikardi",
+      "Depresyon",
+      "Deri kuruluğu, sertleşmesi",
+      "Saç dökülmesi",
+      "Ses kısıklığı (myksödem sesi)"
+    ],
+    "key": [
+      "Soğuğa intolerans",
+      "Kilo alma",
+      "Yorgunluk",
+      "Bradikardi",
+      "Kabızlık"
+    ],
+    "dx": [
+      "Anti-TPO antikoru artışı (en sensitif)",
+      "TSH artışı",
+      "fT4 düşük",
+      "USG: heterojen, lobüler tiroid"
+    ],
+    "notes": [
+      "En sık hipotiroidi nedeni; otoimmün; kadınlarda 7-10 kat daha sık; SLE ile birliktelik olabilir"
+    ]
+  }
+];
+
+</script>
+<script id="app-script">
+
+const ALL_CATS = Object.keys(CAT);
+
+function catLabel(k){ return CAT[k] ? CAT[k].label : k; }
+function catColor(k){ return CAT[k] ? CAT[k].color : '#888'; }
+function catBg(k){ return CAT[k] ? CAT[k].bg : 'transparent'; }
+
+/* ---- TABS ---- */
+function showTab(tab){
+  ['cards','flash','quiz'].forEach(t=>{
+    document.getElementById(t+'-view').style.display = t===tab ? '' : 'none';
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+  });
+  document.getElementById('detail-view').style.display='none';
+  if(tab==='cards') document.getElementById('cards-view').style.display='';
+  if(tab==='flash') initFlash();
+  if(tab==='quiz') showQuizSetup();
+}
+
+/* ---- CARDS ---- */
+let activeFilter='ALL';
+function buildFilters(){
+  let html='<button class="f-btn'+(activeFilter==='ALL'?' on':'')+'" onclick="setFilter(\'ALL\')">Tümü</button>';
+  ALL_CATS.forEach(k=>{
+    html+=`<button class="f-btn${activeFilter===k?' on':''}" onclick="setFilter('${k}')">${catLabel(k)}</button>`;
+  });
+  document.getElementById('filter-bar').innerHTML=html;
+}
+function setFilter(cat){ activeFilter=cat; buildFilters(); renderCards(); }
+function renderCards(){
+  const filtered = activeFilter==='ALL' ? DATA : DATA.filter(d=>d.cat===activeFilter);
+  document.getElementById('cards-grid').innerHTML = filtered.map((d,i)=>{
+    const col=catColor(d.cat);
+    return `<div class="card-thumb" onclick="openDetail(${DATA.indexOf(d)})" style="animation-delay:${i*0.025}s;border-color:${col}22">
+      <div style="position:absolute;top:0;right:0;width:70px;height:70px;border-radius:50%;background:${col};transform:translate(20px,-20px);opacity:0.1;pointer-events:none"></div>
+      <div class="card-cat-label" style="color:${col}">${catLabel(d.cat)}</div>
+      <div class="card-name">${d.name}</div>
+    </div>`;
+  }).join('');
+}
+function openDetail(idx){
+  document.getElementById('cards-view').style.display='none';
+  document.getElementById('detail-view').style.display='block';
+  const d=DATA[idx], col=catColor(d.cat), bg=catBg(d.cat);
+  let html=`
+    <span class="detail-cat-pill" style="background:${bg};color:${col};border:1px solid ${col}33">${catLabel(d.cat)}</span>
+    <div class="detail-title">${d.name}</div>
+    <div style="margin-top:24px">
+    <div class="detail-section">
+      <div class="detail-section-label">Anamnezde ipuçları</div>
+      <div class="tags">${d.clues.map(x=>`<span class="tag">${x}</span>`).join('')}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-label">Anahtar bulgular</div>
+      <div class="tags">${d.key.map(x=>`<span class="tag key">${x}</span>`).join('')}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-label">Ayırıcı tanı yöntemi</div>
+      <div class="tags">${d.dx.map(x=>`<span class="tag dx">${x}</span>`).join('')}</div>
+    </div>`;
+  if(d.notes && d.notes.length){
+    html+=`<div class="detail-section">
+      <div class="detail-section-label">Klinik notlar</div>
+      <div class="tags">${d.notes.map(x=>`<span class="tag note">&#x26F3; ${x}</span>`).join('')}</div>
+    </div>`;
+  }
+  html+='</div>';
+  document.getElementById('detail-card').innerHTML=html;
+}
+function closeDetail(){
+  document.getElementById('detail-view').style.display='none';
+  document.getElementById('cards-view').style.display='';
+}
+
+/* ---- FLASHCARD ---- */
+let flashSource=[], flashFiltered=[], flashIdx=0, flashFlipped=false, flashShuffled=false;
+function initFlash(){
+  flashShuffled=false;
+  document.getElementById('shuffle-switch').classList.remove('on');
+  buildFlashFilters('ALL');
+  flashSource=[...DATA];
+  flashFiltered=[...flashSource];
+  flashIdx=0; renderFlipCard();
+}
+function buildFlashFilters(active){
+  let h=`<button class="f-btn${active==='ALL'?' on':''}" onclick="setFlashFilter('ALL',this)">Tümü</button>`;
+  ALL_CATS.forEach(k=>{
+    h+=`<button class="f-btn${active===k?' on':''}" onclick="setFlashFilter('${k}',this)">${catLabel(k)}</button>`;
+  });
+  document.getElementById('flash-filter-bar').innerHTML=h;
+}
+function setFlashFilter(cat,el){
+  document.querySelectorAll('#flash-filter-bar .f-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  flashSource = cat==='ALL' ? [...DATA] : DATA.filter(d=>d.cat===cat);
+  flashFiltered = flashShuffled ? shuffle([...flashSource]) : [...flashSource];
+  flashIdx=0; renderFlipCard();
+}
+function toggleShuffle(){
+  flashShuffled=!flashShuffled;
+  const sw=document.getElementById('shuffle-switch');
+  sw.classList.toggle('on',flashShuffled);
+  flashFiltered = flashShuffled ? shuffle([...flashSource]) : [...flashSource];
+  flashIdx=0; renderFlipCard();
+}
+function renderFlipCard(){
+  if(!flashFiltered.length)return;
+  const d=flashFiltered[flashIdx], col=catColor(d.cat);
+  document.getElementById('flip-disease-name').textContent=d.name;
+  document.getElementById('flip-back-content').innerHTML=
+    '<div style="margin-bottom:6px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:'+col+';font-weight:600">'+catLabel(d.cat)+'</div>'+
+    '<div style="margin-bottom:10px">'+
+    d.key.map(k=>'<div class="flip-clue" style="color:'+col+';font-weight:500;margin-bottom:3px">&#9658; '+k+'</div>').join('')+
+    '</div><div style="border-top:1px solid rgba(255,255,255,0.07);padding-top:10px">'+
+    d.clues.map(cl=>'<div class="flip-clue">&#8226; '+cl+'</div>').join('')+
+    '</div>';
+  document.getElementById('flipper').classList.remove('flipped');
+  flashFlipped=false;
+  document.getElementById('flash-counter').textContent=(flashIdx+1)+' / '+flashFiltered.length;
+}
+function flipCard(){ flashFlipped=!flashFlipped; document.getElementById('flipper').classList.toggle('flipped',flashFlipped); }
+function flashPrev(){ flashIdx=(flashIdx-1+flashFiltered.length)%flashFiltered.length; renderFlipCard(); }
+function flashNext(){ flashIdx=(flashIdx+1)%flashFiltered.length; renderFlipCard(); }
+
+/* ---- QUIZ ---- */
+let quizPool=[], quizIdx=0, quizScore=0, quizAnswered=false, activeTypes=[];
+
+function shuffle(a){ return [...a].sort(()=>Math.random()-.5); }
+
+function showQuizSetup(){
+  const w=document.getElementById('quiz-wrap');
+  let catBtns=`<button class="qtoggle on" data-cat="ALL" onclick="toggleQCat(this)">Tümü (Karıştır)</button>`;
+  ALL_CATS.forEach(k=>{
+    catBtns+=`<button class="qtoggle on" data-cat="${k}" onclick="toggleQCat(this)">${catLabel(k)}</button>`;
+  });
+  w.innerHTML=`
+    <div style="margin-bottom:24px">
+      <div class="qsetup-title">Kategori seç</div>
+      <div class="qrow" id="qcat-row">${catBtns}</div>
+    </div>
+    <div style="margin-bottom:24px">
+      <div class="qsetup-title">Soru tipi</div>
+      <div class="qrow" id="qtype-row">
+        <button class="qtoggle on" data-type="hangiHastalık" onclick="this.classList.toggle('on')">Hangi hastalık?</button>
+        <button class="qtoggle on" data-type="hangiTanı" onclick="this.classList.toggle('on')">Hangi tanı yöntemi?</button>
+        <button class="qtoggle on" data-type="hangiAnahtar" onclick="this.classList.toggle('on')">Anahtar bulgu bul</button>
+        <button class="qtoggle on" data-type="clueTabanli" onclick="this.classList.toggle('on')">İpucundan hastalık</button>
+      </div>
+    </div>
+    <button class="qstart" onclick="startQuiz()">Quiz Başlat &#8594;</button>`;
+}
+
+function toggleQCat(el){
+  if(el.dataset.cat==='ALL'){
+    const others=document.querySelectorAll('#qcat-row .qtoggle:not([data-cat="ALL"])');
+    const anyOff=[...others].some(b=>!b.classList.contains('on'));
+    others.forEach(b=>b.classList.toggle('on',anyOff));
+    el.classList.toggle('on',anyOff);
+  } else {
+    el.classList.toggle('on');
+  }
+}
+
+function startQuiz(){
+  const activeCats=[...document.querySelectorAll('#qcat-row .qtoggle.on:not([data-cat="ALL"])')].map(b=>b.dataset.cat);
+  activeTypes=[...document.querySelectorAll('#qtype-row .qtoggle.on')].map(b=>b.dataset.type);
+  if(!activeCats.length||!activeTypes.length){ alert('En az bir kategori ve soru tipi seç!'); return; }
+  const pool=DATA.filter(d=>activeCats.includes(d.cat));
+  if(pool.length<4){ alert('En az 4 hastalık olacak şekilde kategori seç.'); return; }
+  quizPool=shuffle(pool);
+  quizIdx=0; quizScore=0;
+  renderQuiz();
+}
+
+function buildQuestion(q, pool){
+  const type=activeTypes[Math.floor(Math.random()*activeTypes.length)];
+  let qText, subText, correct, opts, expl;
+  if(type==='hangiHastalık'){
+    qText='Hangi hastalık?';
+    subText='Bulgular: <strong>'+q.key.join(' &nbsp;&middot;&nbsp; ')+'</strong>';
+    correct=q.name;
+    opts=shuffle([correct,...shuffle(pool.filter(d=>d.name!==q.name)).slice(0,3).map(d=>d.name)]);
+    expl='<strong>'+q.name+'</strong> &mdash; '+catLabel(q.cat)+'. Anahtar: '+q.key.join(', ');
+  } else if(type==='hangiTanı'){
+    qText='Bu hastalıkta hangi tanı yöntemi kullanılır?';
+    subText='Hastalık: <strong>'+q.name+'</strong>';
+    correct=q.dx[0];
+    const allDx=[...new Set(pool.flatMap(d=>d.dx))].filter(x=>x!==correct);
+    opts=shuffle([correct,...shuffle(allDx).slice(0,3)]);
+    expl='<strong>'+q.name+'</strong> &mdash; Tanı yöntemleri: '+q.dx.join('; ');
+  } else if(type==='hangiAnahtar'){
+    qText='Bu hastalığın EN ÖNEMLİ anahtar bulgusu hangisidir?';
+    subText='Hastalık: <strong>'+q.name+'</strong> ('+catLabel(q.cat)+')';
+    correct=q.key[0];
+    const allKeys=[...new Set(pool.flatMap(d=>d.key))].filter(x=>x!==correct);
+    opts=shuffle([correct,...shuffle(allKeys).slice(0,3)]);
+    expl='<strong>'+q.name+'</strong> anahtar bulgular: '+q.key.join(', ');
+  } else {
+    // clueTabanli
+    const ci=Math.floor(Math.random()*q.clues.length);
+    qText='Bu klinik ipucuna göre en olası tanı?';
+    subText='"<strong>'+q.clues[ci]+'</strong>"';
+    correct=q.name;
+    opts=shuffle([correct,...shuffle(pool.filter(d=>d.name!==q.name)).slice(0,3).map(d=>d.name)]);
+    expl='<strong>'+q.name+'</strong> &mdash; '+catLabel(q.cat)+(q.notes&&q.notes[0]?'. Not: '+q.notes[0]:'');
+  }
+  return{qText,subText,correct,opts,expl};
+}
+
+function renderQuiz(){
+  const w=document.getElementById('quiz-wrap');
+  if(quizIdx>=quizPool.length){
+    const pct=Math.round(quizScore/quizPool.length*100);
+    const msg=pct>=80?'Sağlam. Devam et.':pct>=60?'Fena değil, biraz daha tekrar.':'Ezber zamanı.';
+    w.innerHTML=`<div class="result-screen">
+      <div class="rbig">${quizScore}/${quizPool.length}</div>
+      <div class="rlbl">Do&#287;ru &mdash; %${pct}</div>
+      <div class="rmsg">"${msg}"</div>
+      <button class="rbtn" onclick="startQuiz()">Tekrar ba&#351;lat</button>
+      <button class="rbtn" onclick="showQuizSetup()">Ayarlar</button>
+    </div>`;
+    return;
+  }
+  quizAnswered=false;
+  const q=quizPool[quizIdx];
+  const{qText,subText,correct,opts,expl}=buildQuestion(q,quizPool);
+  const pct=Math.round(quizIdx/quizPool.length*100);
+  w.innerHTML=`
+    <div class="quiz-meta">
+      <span class="qnum">Soru ${quizIdx+1} / ${quizPool.length}</span>
+      <span class="qscore">&#10003; ${quizScore}</span>
+    </div>
+    <div class="qpbar"><div class="qpfill" style="width:${pct}%"></div></div>
+    <div class="quiz-q">${qText}</div>
+    <div class="quiz-sub">${subText}</div>
+    <div class="options" id="opts"></div>
+    <div class="qexpl" id="qexpl"></div>
+    <button class="next-btn" id="qnext" onclick="nextQ()">Sonraki &#8594;</button>`;
+  // build options safely
+  const optsDiv=document.getElementById('opts');
+  opts.forEach(o=>{
+    const btn=document.createElement('button');
+    btn.className='opt';
+    btn.textContent=o;
+    btn.addEventListener('click',()=>answer(btn,o,correct,expl));
+    optsDiv.appendChild(btn);
+  });
+}
+function answer(btn,chosen,correct,expl){
+  if(quizAnswered)return;
+  quizAnswered=true;
+  document.querySelectorAll('.opt').forEach(o=>{
+    o.disabled=true;
+    if(o.textContent===correct)o.classList.add('correct');
+  });
+  if(chosen===correct){quizScore++;btn.classList.add('correct');}
+  else btn.classList.add('wrong');
+  const ex=document.getElementById('qexpl');
+  ex.classList.add('show');
+  ex.innerHTML=expl;
+  document.getElementById('qnext').classList.add('show');
+}
+function nextQ(){ quizIdx++; renderQuiz(); }
+
+/* INIT */
+buildFilters();
+renderCards();
+
+</script>
+</body>
+</html>
